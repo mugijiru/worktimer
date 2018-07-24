@@ -1,7 +1,11 @@
 package main
 
-import "fmt"
-import "time"
+import (
+	"flag"
+	"fmt"
+	"os"
+	"time"
+)
 
 func main() {
 	t := time.Now()
