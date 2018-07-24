@@ -1,7 +1,10 @@
 package main
 
 import "fmt"
+import "time"
 
 func main() {
-	fmt.Println("2018/07/25\t10:00\t19:00")
+	t := time.Now()
+	const format = "2006/01/02"
+	fmt.Printf("%v\t10:00\t19:00\n", t.Format(format))
 }
