@@ -3,8 +3,10 @@ package main
 import (
 	"flag"
 	"fmt"
-	// "github.com/nlopes/slack"
+	"github.com/nlopes/slack"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -15,6 +17,10 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Slack token is empty\n")
 		os.Exit(1)
 	}
+
+	api := slack.New(slackToken)
+	params := slack.SearchParameters{}
+	params.Count = 100
 
 	// -hオプション用文言
 	flag.Usage = func() {
@@ -34,5 +40,23 @@ Usage of %s:
 		t, _ = time.Parse(format, flag.Arg(0))
 	}
 
-	fmt.Printf("%v\t10:00\t19:00\n", t.Format(format))
+	response, _ := api.SearchMessages("from:me on:"+t.Format(format), params)
+	messages := response.Matches
+
+	lastMessage := messages[0]
+	// lastMessage := messages[len(messages)-1]
+
+	fmt.Println(lastMessage.Text)
+	components := strings.Split(lastMessage.Timestamp, ".")
+	intVal, _ := strconv.ParseInt(components[0], 10, 64)
+	lastTime := time.Unix(intVal, 0)
+
+	timeFormat := "15:04:05"
+	fmt.Println(lastTime.Format(timeFormat))
+
+	// for _, message := range messages.Matches {
+	// 	fmt.Println(message.Text)
+	// }
+
+	// fmt.Printf("%v\t%v\t%v\n", t.Format(format), firstTime.Format(timeFormat), lastTime.format(timeFormat))
 }
