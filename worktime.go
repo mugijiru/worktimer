@@ -3,11 +3,19 @@ package main
 import (
 	"flag"
 	"fmt"
+	// "github.com/nlopes/slack"
 	"os"
 	"time"
 )
 
 func main() {
+	slackToken := os.Getenv("SLACK_TOKEN")
+
+	if slackToken == "" {
+		fmt.Fprintf(os.Stderr, "Slack token is empty\n")
+		os.Exit(1)
+	}
+
 	// -hオプション用文言
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, `
