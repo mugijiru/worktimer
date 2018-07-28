@@ -14,34 +14,13 @@ const dateFormat = "2006/01/02"
 const timeFormat = "15:04:05"
 
 func main() {
-	slackToken := os.Getenv("SLACK_TOKEN")
-
-	if slackToken == "" {
-		fmt.Fprintf(os.Stderr, "Slack token is empty\n")
-		os.Exit(1)
-	}
-
-	api := slack.New(slackToken)
-
-	// -hオプション用文言
-	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, `
-Usage of %s:
-   %s [date]
-`, os.Args[0], os.Args[0])
-		flag.PrintDefaults()
-	}
-
+	flag.Usage = usage
 	flag.Parse()
 
-	targetDate := time.Now()
-
-	if flag.Arg(0) != "" {
-		targetDate, _ = time.Parse(dateFormat, flag.Arg(0))
-	}
+	api := initSlack()
+	targetDate := getTargetDate()
 
 	response := searchMessagesOnDate(api, targetDate)
-
 	messages := response.Matches
 
 	lastMessage := messages[0]
@@ -73,4 +52,34 @@ func searchMessagesOnDate(api *slack.Client, date time.Time) *slack.SearchMessag
 
 	response, _ := api.SearchMessages("from:me on:"+date.Format(dateFormat), params)
 	return response
+}
+
+func initSlack() *slack.Client {
+	slackToken := os.Getenv("SLACK_TOKEN")
+
+	if slackToken == "" {
+		fmt.Fprintf(os.Stderr, "Slack token is empty\n")
+		os.Exit(1)
+	}
+
+	return slack.New(slackToken)
+}
+
+func getTargetDate() time.Time {
+	targetDate := time.Now()
+
+	if flag.Arg(0) != "" {
+		targetDate, _ = time.Parse(dateFormat, flag.Arg(0))
+	}
+
+	return targetDate
+}
+
+// -hオプション用文言
+func usage() {
+	fmt.Fprintf(os.Stderr, `
+Usage of %s:
+   %s [date]
+`, os.Args[0], os.Args[0])
+	flag.PrintDefaults()
 }
