@@ -12,6 +12,7 @@ import (
 
 const dateFormat = "2006/01/02"
 const timeFormat = "15:04:05"
+const debug = false
 
 func main() {
 	flag.Usage = usage
@@ -20,22 +21,29 @@ func main() {
 	api := initSlack()
 	targetDate := getTargetDate()
 
-	response := searchMessagesOnDate(api, targetDate)
+	response := searchMessagesOnDate(api, targetDate, 1)
 	messages := response.Matches
 
-	firstMessage := messages[0]
-	// lastMessage := messages[len(messages)-1]
-
-	fmt.Println(firstMessage.Text)
-
+	// asc とか関係なくページ内では降順で並んで返って来る
+	firstMessage := messages[len(messages)-1]
 	firstTime := getTimeFromMessage(firstMessage)
-	fmt.Println(firstTime.Format(timeFormat))
 
-	// for _, message := range messages.Matches {
-	// 	fmt.Println(message.Text)
-	// }
+	lastPage := response.Paging.Pages
 
-	// fmt.Printf("%v\t%v\t%v\n", t.Format(format), firstTime.Format(timeFormat), lastTime.format(timeFormat))
+	if lastPage > 1 {
+		response = searchMessagesOnDate(api, targetDate, lastPage)
+		messages = response.Matches
+	}
+
+	lastMessage := messages[0]
+	lastTime := getTimeFromMessage(lastMessage)
+
+	if debug {
+		fmt.Println("first: " + firstMessage.Text)
+		fmt.Println("last: " + lastMessage.Text)
+	}
+
+	fmt.Printf("%v\t%v\t%v\n", targetDate.Format(dateFormat), firstTime.Format(timeFormat), lastTime.Format(timeFormat))
 }
 
 func getTimeFromMessage(message slack.SearchMessage) time.Time {
@@ -44,11 +52,12 @@ func getTimeFromMessage(message slack.SearchMessage) time.Time {
 	return time.Unix(Unixtime, 0)
 }
 
-func searchMessagesOnDate(api *slack.Client, date time.Time) *slack.SearchMessages {
-	params := slack.SearchParameters{}
+func searchMessagesOnDate(api *slack.Client, date time.Time, page int) *slack.SearchMessages {
+	params := slack.NewSearchParameters()
 	params.Count = 100
-	params.SortDirection = "timestamp"
-	params.Sort = "asc"
+	params.SortDirection = "asc"
+	params.Sort = "timestamp"
+	params.Page = page
 
 	response, _ := api.SearchMessages("from:me on:"+date.Format(dateFormat), params)
 	return response
