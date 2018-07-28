@@ -21,6 +21,7 @@ func main() {
 	api := slack.New(slackToken)
 	params := slack.SearchParameters{}
 	params.Count = 100
+	params.SortDirection = "timestamp"
 
 	// -hオプション用文言
 	flag.Usage = func() {
