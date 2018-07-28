@@ -10,6 +10,9 @@ import (
 	"time"
 )
 
+const dateFormat = "2006/01/02"
+const timeFormat = "15:04:05"
+
 func main() {
 	slackToken := os.Getenv("SLACK_TOKEN")
 
@@ -19,9 +22,6 @@ func main() {
 	}
 
 	api := slack.New(slackToken)
-	params := slack.SearchParameters{}
-	params.Count = 100
-	params.SortDirection = "timestamp"
 
 	// -hオプション用文言
 	flag.Usage = func() {
@@ -34,25 +34,23 @@ Usage of %s:
 
 	flag.Parse()
 
-	const format = "2006/01/02"
-	t := time.Now()
+	targetDate := time.Now()
 
 	if flag.Arg(0) != "" {
-		t, _ = time.Parse(format, flag.Arg(0))
+		targetDate, _ = time.Parse(dateFormat, flag.Arg(0))
 	}
 
-	response, _ := api.SearchMessages("from:me on:"+t.Format(format), params)
+	response := searchMessagesOnDate(api, targetDate)
+
 	messages := response.Matches
 
 	lastMessage := messages[0]
 	// lastMessage := messages[len(messages)-1]
 
 	fmt.Println(lastMessage.Text)
-	components := strings.Split(lastMessage.Timestamp, ".")
-	intVal, _ := strconv.ParseInt(components[0], 10, 64)
-	lastTime := time.Unix(intVal, 0)
 
-	timeFormat := "15:04:05"
+	lastTime := getTimeFromMessage(lastMessage)
+
 	fmt.Println(lastTime.Format(timeFormat))
 
 	// for _, message := range messages.Matches {
@@ -60,4 +58,19 @@ Usage of %s:
 	// }
 
 	// fmt.Printf("%v\t%v\t%v\n", t.Format(format), firstTime.Format(timeFormat), lastTime.format(timeFormat))
+}
+
+func getTimeFromMessage(message slack.SearchMessage) time.Time {
+	components := strings.Split(message.Timestamp, ".")
+	Unixtime, _ := strconv.ParseInt(components[0], 10, 64)
+	return time.Unix(Unixtime, 0)
+}
+
+func searchMessagesOnDate(api *slack.Client, date time.Time) *slack.SearchMessages {
+	params := slack.SearchParameters{}
+	params.Count = 100
+	params.SortDirection = "timestamp"
+
+	response, _ := api.SearchMessages("from:me on:"+date.Format(dateFormat), params)
+	return response
 }
