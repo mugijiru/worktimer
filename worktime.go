@@ -23,14 +23,13 @@ func main() {
 	response := searchMessagesOnDate(api, targetDate)
 	messages := response.Matches
 
-	lastMessage := messages[0]
+	firstMessage := messages[0]
 	// lastMessage := messages[len(messages)-1]
 
-	fmt.Println(lastMessage.Text)
+	fmt.Println(firstMessage.Text)
 
-	lastTime := getTimeFromMessage(lastMessage)
-
-	fmt.Println(lastTime.Format(timeFormat))
+	firstTime := getTimeFromMessage(firstMessage)
+	fmt.Println(firstTime.Format(timeFormat))
 
 	// for _, message := range messages.Matches {
 	// 	fmt.Println(message.Text)
@@ -49,6 +48,7 @@ func searchMessagesOnDate(api *slack.Client, date time.Time) *slack.SearchMessag
 	params := slack.SearchParameters{}
 	params.Count = 100
 	params.SortDirection = "timestamp"
+	params.Sort = "asc"
 
 	response, _ := api.SearchMessages("from:me on:"+date.Format(dateFormat), params)
 	return response
