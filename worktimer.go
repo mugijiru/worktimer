@@ -19,10 +19,21 @@ func main() {
 	flag.Parse()
 
 	api := initSlack()
-	targetStartDate, _ := getTargetDates()
+	targetStartDate, targetEndDate := getTargetDates()
 
-	response := searchMessagesOnDate(api, targetStartDate, 1)
+	for date := targetStartDate; !date.After(targetEndDate); date = date.Add(24 * time.Hour) {
+		printWorktime(api, date)
+	}
+}
+
+func printWorktime(api *slack.Client, date time.Time) {
+	response := searchMessagesOnDate(api, date, 1)
 	messages := response.Matches
+
+	if len(messages) == 0 {
+		fmt.Printf("%v\t----\t----\n", date.Format(dateFormat))
+		return
+	}
 
 	// asc とか関係なくページ内では降順で並んで返って来る
 	firstMessage := messages[len(messages)-1]
@@ -31,7 +42,7 @@ func main() {
 	lastPage := response.Paging.Pages
 
 	if lastPage > 1 {
-		response = searchMessagesOnDate(api, targetStartDate, lastPage)
+		response = searchMessagesOnDate(api, date, lastPage)
 		messages = response.Matches
 	}
 
@@ -43,7 +54,7 @@ func main() {
 		fmt.Println("last: " + lastMessage.Text)
 	}
 
-	fmt.Printf("%v\t%v\t%v\n", targetStartDate.Format(dateFormat), firstTime.Format(timeFormat), lastTime.Format(timeFormat))
+	fmt.Printf("%v\t%v\t%v\n", date.Format(dateFormat), firstTime.Format(timeFormat), lastTime.Format(timeFormat))
 }
 
 func getTimeFromMessage(message slack.SearchMessage) time.Time {
@@ -80,6 +91,7 @@ func getTargetDates() (time.Time, time.Time) {
 
 	if flag.Arg(0) != "" {
 		targetStartDate, _ = time.Parse(dateFormat, flag.Arg(0))
+		targetEndDate = targetStartDate
 	}
 
 	if flag.Arg(1) != "" {
@@ -93,7 +105,7 @@ func getTargetDates() (time.Time, time.Time) {
 func usage() {
 	fmt.Fprintf(os.Stderr, `
 Usage of %s:
-   %s [YYYY/MM/DD]
+   %s [YYYY/MM/DD [YYYY/MM/DD]]
 `, os.Args[0], os.Args[0])
 	flag.PrintDefaults()
 }
