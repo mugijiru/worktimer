@@ -88,7 +88,7 @@ func getTargetDate() time.Time {
 func usage() {
 	fmt.Fprintf(os.Stderr, `
 Usage of %s:
-   %s [date]
+   %s [YYYY/MM/DD]
 `, os.Args[0], os.Args[0])
 	flag.PrintDefaults()
 }
